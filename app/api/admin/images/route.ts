@@ -20,6 +20,12 @@ export async function POST(req: NextRequest) {
   const arrayBuffer = await file.arrayBuffer()
 
   const supabase = createServiceClient()
+
+  const { data: buckets } = await supabase.storage.listBuckets()
+  if (!buckets?.find(b => b.name === BUCKET)) {
+    await supabase.storage.createBucket(BUCKET, { public: true })
+  }
+
   const { error } = await supabase.storage
     .from(BUCKET)
     .upload(filename, arrayBuffer, { contentType: file.type, upsert: false })

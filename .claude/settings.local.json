@@ -5,7 +5,9 @@
       "Bash(npx next *)",
       "Bash(kill *)",
       "Bash(yarn install *)",
-      "Bash(yarn tsc *)"
+      "Bash(yarn tsc *)",
+      "Bash(yarn build *)",
+      "Bash(yarn dev *)"
     ]
   }
 }
