@@ -360,15 +360,15 @@ export default function AdminPage() {
             <Field label="주소">
               <input value={config.venue.address} onChange={e => setVenue({ address: e.target.value })} className={inputCls} />
             </Field>
-            <Field label="네이버 지도 장소 ID">
+            <Field label="네이버 지도 장소 ID (선택)">
               <input
                 value={config.venue.naverPlaceId}
                 onChange={e => setVenue({ naverPlaceId: e.target.value })}
-                placeholder="예: 1234567890"
+                placeholder="예: 32982104"
                 className={inputCls}
               />
               <p className="text-[10px] text-neutral-400 mt-1">
-                네이버 지도 URL의 숫자 ID (map.naver.com/p/entry/place/숫자)
+                입력하면 하단에 "네이버 지도" 버튼이 표시됩니다. 지도 화면은 주소 기반 Google Maps로 표시됩니다.
               </p>
             </Field>
             <Field label="예식 시간">
