@@ -30,8 +30,21 @@ export function BgmProvider({ bgmUrl, children }: { bgmUrl: string; children: Re
   const [playing, setPlaying] = useState(false)
   const videoId = bgmUrl ? extractVideoId(bgmUrl) : null
 
+  // 첫 사용자 인터랙션 시 재생 (팝업 없이 진입한 경우 대비)
+  const registerPlayOnInteraction = useCallback(() => {
+    const events = ['touchstart', 'scroll', 'click'] as const
+    const handler = () => {
+      playerRef.current?.playVideo()
+      events.forEach(ev => window.removeEventListener(ev, handler))
+    }
+    events.forEach(ev => window.addEventListener(ev, handler, { once: true, passive: true }))
+    return () => events.forEach(ev => window.removeEventListener(ev, handler))
+  }, [])
+
   useEffect(() => {
     if (!videoId) return
+
+    let cleanupInteraction: (() => void) | undefined
 
     const initPlayer = () => {
       const el = document.getElementById('yt-bgm-player')
@@ -40,6 +53,22 @@ export function BgmProvider({ bgmUrl, children }: { bgmUrl: string; children: Re
         videoId,
         playerVars: { loop: 1, playlist: videoId, controls: 0, disablekb: 1, fs: 0, rel: 0 },
         events: {
+          onReady: () => {
+            // 팝업이 이미 닫혀있는 경우(오늘 하루 안보기) 자동 재생 시도
+            const today = new Date().toISOString().slice(0, 10)
+            const popupHidden = localStorage.getItem('popup-hidden-date') === today
+            if (popupHidden) {
+              // 자동 재생 시도 → 브라우저 정책으로 막히면 첫 인터랙션 시 재생
+              playerRef.current?.playVideo()
+              // 500ms 후에도 재생 안 되면 인터랙션 대기
+              setTimeout(() => {
+                const state = playerRef.current?.getPlayerState?.()
+                if (state !== window.YT?.PlayerState?.PLAYING) {
+                  cleanupInteraction = registerPlayOnInteraction()
+                }
+              }, 500)
+            }
+          },
           onStateChange: (e: any) => {
             setPlaying(e.data === window.YT?.PlayerState?.PLAYING)
           },
@@ -68,10 +97,11 @@ export function BgmProvider({ bgmUrl, children }: { bgmUrl: string; children: Re
     }
 
     return () => {
+      cleanupInteraction?.()
       playerRef.current?.destroy()
       playerRef.current = null
     }
-  }, [videoId])
+  }, [videoId, registerPlayOnInteraction])
 
   const play = useCallback(() => {
     playerRef.current?.playVideo()

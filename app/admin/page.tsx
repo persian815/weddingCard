@@ -221,6 +221,23 @@ export default function AdminPage() {
     setConfig(p => ({ ...p, gallery: g }))
   }
 
+  const moveStory = (i: number, dir: -1 | 1) => {
+    const s = [...config.ourStory]
+    const target = i + dir
+    if (target < 0 || target >= s.length) return
+    ;[s[i], s[target]] = [s[target], s[i]]
+    setConfig(p => ({ ...p, ourStory: s }))
+  }
+
+  const sortStoryByDate = () => {
+    const parseDate = (str: string) => {
+      const d = new Date(str.replace(/\./g, '-'))
+      return isNaN(d.getTime()) ? 0 : d.getTime()
+    }
+    const sorted = [...config.ourStory].sort((a, b) => parseDate(a.date) - parseDate(b.date))
+    setConfig(p => ({ ...p, ourStory: sorted }))
+  }
+
   // ── password gate ────────────────────────────────────────────
   if (!authed) {
     return (
@@ -650,11 +667,31 @@ export default function AdminPage() {
           </Section>
 
           <Section title="우리 이야기 타임라인">
+            <div className="flex justify-end">
+              <button
+                onClick={sortStoryByDate}
+                className="text-[10px] border border-neutral-200 text-neutral-500 px-2 py-1 hover:border-[var(--gold)] hover:text-[var(--gold)] transition-colors"
+              >
+                날짜순 정렬
+              </button>
+            </div>
             <div className="space-y-3">
               {config.ourStory.map((item, i) => (
                 <div key={i} className="border border-neutral-100 rounded-sm p-3 space-y-2 bg-neutral-50">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-neutral-500">#{i + 1}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-medium text-neutral-500">#{i + 1}</span>
+                      <button
+                        onClick={() => moveStory(i, -1)}
+                        disabled={i === 0}
+                        className="text-[10px] text-neutral-300 hover:text-neutral-600 disabled:opacity-30 px-1"
+                      >↑</button>
+                      <button
+                        onClick={() => moveStory(i, 1)}
+                        disabled={i === config.ourStory.length - 1}
+                        className="text-[10px] text-neutral-300 hover:text-neutral-600 disabled:opacity-30 px-1"
+                      >↓</button>
+                    </div>
                     <button
                       onClick={() => setConfig(p => ({ ...p, ourStory: p.ourStory.filter((_, idx) => idx !== i) }))}
                       className="text-[10px] text-red-400 hover:text-red-600"
