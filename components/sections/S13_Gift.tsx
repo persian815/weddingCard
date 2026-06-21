@@ -30,9 +30,13 @@ function AccountItem({ name, bank, number, kakaoPayUrl }: WeddingConfig['account
           <div className="flex gap-2">
             <button
               onClick={copy}
-              className="flex-1 border border-neutral-200 py-1 text-xs text-neutral-600"
+              className={`flex-1 border py-1 text-xs transition-colors ${
+                copied
+                  ? 'border-green-400 text-green-600 bg-green-50'
+                  : 'border-neutral-200 text-neutral-600'
+              }`}
             >
-              {copied ? '복사됨' : '계좌 복사'}
+              {copied ? '✓ 복사됨' : '계좌 복사'}
             </button>
             {kakaoPayUrl && (
               <a

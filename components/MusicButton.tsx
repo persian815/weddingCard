@@ -1,33 +1,14 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useBgm } from '@/components/BgmContext'
 
-export default function MusicButton({ audioRef }: { audioRef?: React.RefObject<HTMLAudioElement | null> }) {
-  const localRef = useRef<HTMLAudioElement>(null)
-  const ref = audioRef ?? localRef
-  const [playing, setPlaying] = useState(false)
+export default function MusicButton() {
+  const { play, pause, playing, hasMusic } = useBgm()
 
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const onPlay = () => setPlaying(true)
-    const onPause = () => setPlaying(false)
-    el.addEventListener('play', onPlay)
-    el.addEventListener('pause', onPause)
-    return () => {
-      el.removeEventListener('play', onPlay)
-      el.removeEventListener('pause', onPause)
-    }
-  }, [ref])
-
-  const toggle = () => {
-    const el = ref.current
-    if (!el) return
-    playing ? el.pause() : el.play().catch(() => {})
-  }
+  if (!hasMusic) return null
 
   return (
     <button
-      onClick={toggle}
+      onClick={() => playing ? pause() : play()}
       className="fixed top-4 right-4 z-40 w-9 h-9 rounded-full bg-white/80 shadow flex items-center justify-center text-sm"
       aria-label={playing ? '음악 정지' : '음악 재생'}
     >

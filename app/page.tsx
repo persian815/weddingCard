@@ -1,5 +1,6 @@
 import { getWeddingConfig } from '@/lib/wedding-config-server'
 import { WeddingConfigProvider } from '@/components/WeddingConfigContext'
+import { BgmProvider } from '@/components/BgmContext'
 import EntryPopup from '@/components/EntryPopup'
 import MusicButton from '@/components/MusicButton'
 import FloatingActions from '@/components/FloatingActions'
@@ -24,6 +25,7 @@ export default async function Home() {
   const config = await getWeddingConfig()
   return (
     <WeddingConfigProvider config={config}>
+      <BgmProvider bgmUrl={config.bgmUrl}>
       <main className="max-w-md mx-auto">
         <EntryPopup />
         <MusicButton />
@@ -45,6 +47,7 @@ export default async function Home() {
         <S15_Together />
         <S16_Ending />
       </main>
+      </BgmProvider>
     </WeddingConfigProvider>
   )
 }

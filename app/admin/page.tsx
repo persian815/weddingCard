@@ -32,9 +32,18 @@ const TABS = [
   { id: 'people', label: '인물·인터뷰' },
   { id: 'info', label: '안내·계좌' },
   { id: 'etc', label: '기타' },
+  { id: 'guestbook', label: '방명록' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
+
+interface GuestbookEntry {
+  id: string
+  name: string
+  message: string
+  created_at: string
+  password?: string | null
+}
 
 export default function AdminPage() {
   const [password, setPassword] = useState('')
@@ -46,19 +55,68 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('content')
+  const [showPreview, setShowPreview] = useState(false)
+  const [guestbookEntries, setGuestbookEntries] = useState<GuestbookEntry[]>([])
+  const [gbLoading, setGbLoading] = useState(false)
 
   const coverFileRef = useRef<HTMLInputElement>(null)
   const galleryFileRef = useRef<HTMLInputElement>(null)
   const storyFileRefs = useRef<(HTMLInputElement | null)[]>([])
+  const tabPhotoboothFileRef = useRef<HTMLInputElement>(null)
+  const tabParkingFileRef = useRef<HTMLInputElement>(null)
+  const tabGiftFileRef = useRef<HTMLInputElement>(null)
+  const ceremonyImageFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const stored = sessionStorage.getItem('admin-pw')
     if (stored) { setAuthed(true); loadConfig() }
   }, [])
 
+  useEffect(() => {
+    if (authed && activeTab === 'guestbook') {
+      loadGuestbook()
+    }
+  }, [activeTab, authed])
+
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok })
     setTimeout(() => setToast(null), 2500)
+  }
+
+  const loadGuestbook = async () => {
+    const pw = sessionStorage.getItem('admin-pw') ?? ''
+    setGbLoading(true)
+    try {
+      const res = await fetch('/api/guestbook', {
+        headers: { 'x-admin-password': pw },
+      })
+      const data = await res.json()
+      setGuestbookEntries(data.entries ?? [])
+    } catch {
+      showToast('방명록 불러오기 실패', false)
+    } finally {
+      setGbLoading(false)
+    }
+  }
+
+  const deleteGuestbookEntry = async (id: string) => {
+    const pw = sessionStorage.getItem('admin-pw') ?? ''
+    try {
+      const res = await fetch('/api/guestbook', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': pw },
+        body: JSON.stringify({ id }),
+      })
+      if (res.ok) {
+        setGuestbookEntries(prev => prev.filter(e => e.id !== id))
+        showToast('삭제되었습니다', true)
+      } else {
+        const data = await res.json()
+        showToast(data.error ?? '삭제 실패', false)
+      }
+    } catch {
+      showToast('네트워크 오류', false)
+    }
   }
 
   const loadConfig = async () => {
@@ -102,6 +160,8 @@ export default function AdminPage() {
       })
       if (res.ok) {
         showToast('저장되었습니다 ✓', true)
+        setShowPreview(true)
+        setTimeout(() => setShowPreview(false), 5000)
       } else {
         const { error } = await res.json()
         showToast(error ?? '저장 실패', false)
@@ -152,6 +212,14 @@ export default function AdminPage() {
     setConfig(p => ({ ...p, people: { ...p.people, ...patch } }))
   const setInfoTabs = (patch: Partial<WeddingConfig['infoTabs']>) =>
     setConfig(p => ({ ...p, infoTabs: { ...p.infoTabs, ...patch } }))
+
+  const moveGallery = (i: number, dir: -1 | 1) => {
+    const g = [...config.gallery]
+    const target = i + dir
+    if (target < 0 || target >= g.length) return
+    ;[g[i], g[target]] = [g[target], g[i]]
+    setConfig(p => ({ ...p, gallery: g }))
+  }
 
   // ── password gate ────────────────────────────────────────────
   if (!authed) {
@@ -245,6 +313,18 @@ export default function AdminPage() {
                   >
                     ×
                   </button>
+                  <div className="absolute bottom-1 left-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => moveGallery(i, -1)}
+                      disabled={i === 0}
+                      className="bg-black/60 text-white text-[10px] w-5 h-5 flex items-center justify-center disabled:opacity-30"
+                    >↑</button>
+                    <button
+                      onClick={() => moveGallery(i, 1)}
+                      disabled={i === config.gallery.length - 1}
+                      className="bg-black/60 text-white text-[10px] w-5 h-5 flex items-center justify-center disabled:opacity-30"
+                    >↓</button>
+                  </div>
                 </div>
               ))}
               <button
@@ -336,12 +416,114 @@ export default function AdminPage() {
               </div>
             )}
           </Section>
+
+          <Section title="안내 탭 이미지">
+            <p className="text-[10px] text-neutral-400">포토부스·주차·답례품 탭에 표시될 이미지입니다.</p>
+            {(
+              [
+                { label: '포토부스', key: 'tab-photobooth', imageKey: 'photoboothImage', ref: tabPhotoboothFileRef },
+                { label: '주차', key: 'tab-parking', imageKey: 'parkingImage', ref: tabParkingFileRef },
+                { label: '답례품', key: 'tab-gift', imageKey: 'giftImage', ref: tabGiftFileRef },
+              ] as const
+            ).map(({ label, key, imageKey, ref }) => (
+              <div key={key} className="flex gap-3 items-center border border-neutral-100 p-3 rounded-sm">
+                <div className="w-16 h-16 flex-shrink-0 bg-neutral-100 relative overflow-hidden">
+                  {config.infoTabs[imageKey]
+                    ? <img src={config.infoTabs[imageKey]} alt="" className="w-full h-full object-cover" />
+                    : <span className="flex items-center justify-center h-full text-neutral-300 text-xs">없음</span>
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium">{label}</p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => ref.current?.click()}
+                    disabled={uploading === key}
+                    className="text-[10px] border border-[var(--gold)] text-[var(--gold)] px-2 py-1 whitespace-nowrap disabled:opacity-50"
+                  >
+                    {uploading === key ? '…' : config.infoTabs[imageKey] ? '교체' : '등록'}
+                  </button>
+                  {config.infoTabs[imageKey] && (
+                    <button
+                      onClick={async () => {
+                        await deleteImage(config.infoTabs[imageKey])
+                        setInfoTabs({ [imageKey]: '' })
+                      }}
+                      className="text-[10px] text-red-400 border border-red-200 px-2 py-1"
+                    >
+                      삭제
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={ref}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    if (config.infoTabs[imageKey]) await deleteImage(config.infoTabs[imageKey])
+                    const url = await uploadImage(file, key)
+                    if (url) setInfoTabs({ [imageKey]: url })
+                    e.target.value = ''
+                  }}
+                />
+              </div>
+            ))}
+          </Section>
         </div>
       )
 
       // ── 예식 정보 ────────────────────────────────────────────
       case 'ceremony': return (
         <div className="space-y-10">
+          <Section title="예식 커플 사진">
+            <p className="text-[10px] text-neutral-400">예식 정보 섹션에 표시될 커플 사진입니다.</p>
+            <div className="space-y-3">
+              {config.ceremonyImage ? (
+                <div className="relative aspect-video bg-neutral-100">
+                  <img src={config.ceremonyImage} alt="" className="w-full h-full object-cover" />
+                  <button
+                    onClick={async () => {
+                      await deleteImage(config.ceremonyImage)
+                      setConfig(p => ({ ...p, ceremonyImage: '' }))
+                    }}
+                    className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded"
+                  >
+                    삭제
+                  </button>
+                </div>
+              ) : (
+                <div className="aspect-video bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center text-neutral-300 text-xs">
+                  이미지 없음
+                </div>
+              )}
+              <button
+                onClick={() => ceremonyImageFileRef.current?.click()}
+                disabled={uploading === 'ceremony'}
+                className="w-full border border-[var(--gold)] text-[var(--gold)] py-2 text-xs tracking-wider disabled:opacity-50"
+              >
+                {uploading === 'ceremony' ? '업로드 중...' : config.ceremonyImage ? '이미지 교체' : '이미지 등록'}
+              </button>
+              <input
+                ref={ceremonyImageFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  if (config.ceremonyImage) await deleteImage(config.ceremonyImage)
+                  const url = await uploadImage(file, 'ceremony')
+                  if (url) setConfig(p => ({ ...p, ceremonyImage: url }))
+                  e.target.value = ''
+                }}
+              />
+            </div>
+          </Section>
+
           <Section title="청첩 문구">
             <Field label="초대 문구">
               <textarea
@@ -583,6 +765,30 @@ export default function AdminPage() {
       // ── 기타 ─────────────────────────────────────────────────
       case 'etc': return (
         <div className="space-y-10">
+          <Section title="배경음악">
+            <Field label="YouTube URL">
+              <input
+                value={config.bgmUrl}
+                onChange={e => setConfig(p => ({ ...p, bgmUrl: e.target.value }))}
+                placeholder="https://music.youtube.com/watch?v=..."
+                className={inputCls}
+              />
+              <p className="text-[10px] text-neutral-400 mt-1">
+                YouTube 또는 YouTube Music URL을 붙여넣으세요. 팝업 닫을 때 자동 재생됩니다.
+              </p>
+            </Field>
+            {config.bgmUrl && (
+              <a
+                href={config.bgmUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[10px] text-[var(--gold)] underline"
+              >
+                선택된 곡 확인 →
+              </a>
+            )}
+          </Section>
+
           <Section title="기타">
             <Field label="참석여부 구글폼 URL">
               <input
@@ -593,6 +799,55 @@ export default function AdminPage() {
               />
             </Field>
           </Section>
+        </div>
+      )
+
+      // ── 방명록 ───────────────────────────────────────────────
+      case 'guestbook': return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-neutral-500">총 {guestbookEntries.length}개</p>
+            <button
+              onClick={loadGuestbook}
+              disabled={gbLoading}
+              className="text-xs text-[var(--gold)] border border-[var(--gold)] px-3 py-1 disabled:opacity-50"
+            >
+              {gbLoading ? '불러오는 중...' : '새로고침'}
+            </button>
+          </div>
+          {gbLoading ? (
+            <div className="flex items-center justify-center h-40 text-xs text-neutral-400">불러오는 중...</div>
+          ) : guestbookEntries.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-xs text-neutral-400">방명록이 없습니다</div>
+          ) : (
+            <div className="space-y-3">
+              {guestbookEntries.map(entry => (
+                <div key={entry.id} className="border border-neutral-100 rounded-sm p-3 bg-neutral-50">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium text-neutral-800">{entry.name}</span>
+                        <span className="text-[10px] text-neutral-400">
+                          {new Date(entry.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-600 whitespace-pre-wrap break-words">{entry.message}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (confirm(`"${entry.name}"의 방명록을 삭제하시겠습니까?`)) {
+                          deleteGuestbookEntry(entry.id)
+                        }
+                      }}
+                      className="flex-shrink-0 text-[10px] text-red-400 border border-red-200 px-2 py-1"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )
     }
@@ -638,6 +893,11 @@ export default function AdminPage() {
           >
             {saving ? '저장 중...' : '저장'}
           </button>
+          {showPreview && (
+            <a href="/" target="_blank" className="block text-center text-xs text-[var(--gold)] mt-2 underline">
+              청첩장 미리보기 →
+            </a>
+          )}
         </div>
       </div>
 

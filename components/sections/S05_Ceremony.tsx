@@ -39,11 +39,16 @@ function CalendarGrid({ year, month, highlightDay }: { year: number; month: numb
 
 export default function S05_Ceremony() {
   const d = new Date(WEDDING_DATE)
-  const { venue } = useWeddingConfig()
+  const { venue, ceremonyImage } = useWeddingConfig()
   const dateLabel = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 토요일`
   return (
     <section className="py-16 px-8 text-center space-y-6">
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase">ceremony</p>
+      {ceremonyImage && (
+        <div className="w-full aspect-[4/3] overflow-hidden rounded-sm mb-6">
+          <img src={ceremonyImage} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
       <CalendarGrid year={d.getFullYear()} month={d.getMonth()} highlightDay={d.getDate()} />
       <div className="space-y-1 text-sm text-neutral-600">
         <p>{venue.name || '예식장명'}</p>

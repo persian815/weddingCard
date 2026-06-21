@@ -27,8 +27,11 @@ export interface WeddingConfig {
   }[]
   infoTabs: {
     photobooth: string
+    photoboothImage: string
     parking: string
+    parkingImage: string
     gift: string
+    giftImage: string
   }
   accounts: {
     name: string
@@ -37,6 +40,8 @@ export interface WeddingConfig {
     kakaoPayUrl?: string
   }[]
   attendanceFormUrl: string
+  ceremonyImage: string
+  bgmUrl: string
   coverImage: string
   gallery: string[]
 }
@@ -61,7 +66,7 @@ export const DEFAULT_CONFIG: WeddingConfig = {
     ],
   },
   ourStory: [],
-  infoTabs: { photobooth: '', parking: '', gift: '' },
+  infoTabs: { photobooth: '', photoboothImage: '', parking: '', parkingImage: '', gift: '', giftImage: '' },
   accounts: [
     { name: GROOM, bank: '', number: '', kakaoPayUrl: '' },
     { name: BRIDE, bank: '', number: '', kakaoPayUrl: '' },
@@ -69,6 +74,8 @@ export const DEFAULT_CONFIG: WeddingConfig = {
     { name: `${BRIDE} 부`, bank: '', number: '' },
   ],
   attendanceFormUrl: '',
+  ceremonyImage: '',
+  bgmUrl: '',
   coverImage: '',
   gallery: [],
 }
@@ -83,6 +90,8 @@ export function mergeConfig(saved: Partial<WeddingConfig>): WeddingConfig {
     infoTabs: { ...DEFAULT_CONFIG.infoTabs, ...(saved.infoTabs ?? {}) },
     accounts: saved.accounts ?? DEFAULT_CONFIG.accounts,
     ourStory: saved.ourStory ?? DEFAULT_CONFIG.ourStory,
+    ceremonyImage: saved.ceremonyImage ?? DEFAULT_CONFIG.ceremonyImage,
+    bgmUrl: saved.bgmUrl ?? DEFAULT_CONFIG.bgmUrl,
     coverImage: saved.coverImage ?? DEFAULT_CONFIG.coverImage,
     gallery: saved.gallery ?? DEFAULT_CONFIG.gallery,
   }
