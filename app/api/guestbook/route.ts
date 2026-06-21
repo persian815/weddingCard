@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 
-export async function GET(req: Request) {
-  const supabase = await createClient()
+export async function GET() {
+  const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('wedding_guestbook')
-    .select('*')
+    .select('id, name, message, created_at')
     .order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ entries: data })
@@ -17,7 +16,7 @@ export async function POST(req: Request) {
   if (!name?.trim() || !message?.trim()) {
     return NextResponse.json({ error: 'name and message required' }, { status: 400 })
   }
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const { error } = await supabase
     .from('wedding_guestbook')
     .insert({ name: name.trim(), message: message.trim(), password: password?.trim() || null })
