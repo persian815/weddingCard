@@ -3,29 +3,14 @@ import { useState, useEffect } from 'react'
 
 type Entry = { id: string; name: string; message: string; created_at: string }
 
-function EntryItem({
-  entry,
-  onDeleted,
-}: {
-  entry: Entry
-  onDeleted: (id: string) => void
-}) {
+function EntryItem({ entry, onDeleted }: { entry: Entry; onDeleted: (id: string) => void }) {
   const [deleting, setDeleting] = useState(false)
   const [showInput, setShowInput] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [error, setError] = useState('')
 
-  const handleDeleteClick = () => {
-    setShowInput(true)
-    setError('')
-    setDeletePassword('')
-  }
-
   const handleDeleteConfirm = async () => {
-    if (!deletePassword) {
-      setError('비밀번호를 입력해주세요')
-      return
-    }
+    if (!deletePassword) { setError('비밀번호를 입력해주세요'); return }
     setDeleting(true)
     setError('')
     try {
@@ -53,7 +38,7 @@ function EntryItem({
         <p className="text-xs font-medium">{entry.name}</p>
         {!showInput && (
           <button
-            onClick={handleDeleteClick}
+            onClick={() => { setShowInput(true); setError(''); setDeletePassword('') }}
             className="text-[10px] text-neutral-300 hover:text-red-400 transition-colors shrink-0"
           >
             삭제
@@ -100,6 +85,12 @@ export default function S14_Guestbook() {
   const [message, setMessage] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
+
+  const showToast = (msg: string, ok: boolean) => {
+    setToast({ msg, ok })
+    setTimeout(() => setToast(null), 2500)
+  }
 
   useEffect(() => {
     fetch('/api/guestbook').then(r => r.json()).then(d => setEntries(d.entries ?? []))
@@ -109,29 +100,41 @@ export default function S14_Guestbook() {
     e.preventDefault()
     if (!name.trim() || !message.trim()) return
     setSubmitting(true)
-    await fetch('/api/guestbook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: name.trim(),
-        message: message.trim(),
-        ...(password.trim() ? { password: password.trim() } : {}),
-      }),
-    })
-    const data = await fetch('/api/guestbook').then(r => r.json())
-    setEntries(data.entries ?? [])
-    setName('')
-    setMessage('')
-    setPassword('')
-    setSubmitting(false)
-  }
-
-  const handleDeleted = (id: string) => {
-    setEntries(prev => prev.filter(e => e.id !== id))
+    try {
+      const res = await fetch('/api/guestbook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          message: message.trim(),
+          ...(password.trim() ? { password: password.trim() } : {}),
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        showToast(data.error ?? '저장에 실패했습니다', false)
+        return
+      }
+      const data = await fetch('/api/guestbook').then(r => r.json())
+      setEntries(data.entries ?? [])
+      setName('')
+      setMessage('')
+      setPassword('')
+      showToast('방명록에 남겨주셨습니다 감사합니다', true)
+    } catch {
+      showToast('네트워크 오류가 발생했습니다', false)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <section className="py-16 px-8 bg-neutral-50">
+      {toast && (
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 text-white text-xs px-4 py-2 rounded ${toast.ok ? 'bg-neutral-800' : 'bg-red-500'}`}>
+          {toast.msg}
+        </div>
+      )}
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase text-center mb-6">guestbook</p>
       <form onSubmit={submit} className="max-w-sm mx-auto space-y-2 mb-8">
         <input
@@ -153,7 +156,7 @@ export default function S14_Guestbook() {
           type="password"
           value={password}
           onChange={e => setPassword(e.target.value)}
-          placeholder="비밀번호 (선택, 수정·삭제 시 필요)"
+          placeholder="비밀번호 (선택, 삭제 시 필요)"
           className="w-full border border-neutral-200 px-3 py-2 text-sm outline-none"
           maxLength={50}
         />
@@ -167,7 +170,7 @@ export default function S14_Guestbook() {
       </form>
       <div className="max-w-sm mx-auto space-y-4">
         {entries.map(e => (
-          <EntryItem key={e.id} entry={e} onDeleted={handleDeleted} />
+          <EntryItem key={e.id} entry={e} onDeleted={id => setEntries(prev => prev.filter(e => e.id !== id))} />
         ))}
       </div>
     </section>

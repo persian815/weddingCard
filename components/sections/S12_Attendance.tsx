@@ -18,6 +18,7 @@ export default function S12_Attendance() {
   const [messageText, setMessageText] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const handleOpen = () => {
     setDone(false)
@@ -40,6 +41,7 @@ export default function S12_Attendance() {
     e.preventDefault()
     if (!name.trim()) return
     setSubmitting(true)
+    setSubmitError('')
     try {
       const res = await fetch('/api/attendance', {
         method: 'POST',
@@ -56,7 +58,12 @@ export default function S12_Attendance() {
       if (res.ok) {
         setDone(true)
         setTimeout(() => handleClose(), 2000)
+      } else {
+        const data = await res.json()
+        setSubmitError(data.error ?? '전달에 실패했습니다. 다시 시도해주세요.')
       }
+    } catch {
+      setSubmitError('네트워크 오류가 발생했습니다. 다시 시도해주세요.')
     } finally {
       setSubmitting(false)
     }
@@ -201,6 +208,9 @@ export default function S12_Attendance() {
                 />
               </div>
 
+              {submitError && (
+                <p className="text-xs text-red-500 text-center">{submitError}</p>
+              )}
               <button
                 type="submit"
                 disabled={submitting || !name.trim()}

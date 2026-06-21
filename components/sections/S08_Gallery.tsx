@@ -1,17 +1,11 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useWeddingConfig } from '@/components/WeddingConfigContext'
 
 export default function S08_Gallery() {
-  const [images, setImages] = useState<string[]>([])
+  const { gallery: images } = useWeddingConfig()
   const [selected, setSelected] = useState<number | null>(null)
   const touchStartX = useRef<number | null>(null)
-
-  useEffect(() => {
-    fetch('/api/admin/config')
-      .then(r => r.json())
-      .then(data => { if (Array.isArray(data?.gallery)) setImages(data.gallery) })
-      .catch(() => {})
-  }, [])
 
   const prev = useCallback(() => {
     setSelected(s => (s !== null && s > 0 ? s - 1 : s))
@@ -58,8 +52,8 @@ export default function S08_Gallery() {
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase text-center mb-6">gallery</p>
       <div className="grid grid-cols-3 gap-1">
         {images.map((src, i) => (
-          <button key={i} onClick={() => setSelected(i)} className="aspect-square overflow-hidden">
-            <img src={src} alt="" className="w-full h-full object-cover" />
+          <button key={src} onClick={() => setSelected(i)} className="aspect-square overflow-hidden">
+            <img src={src} alt={`갤러리 ${i + 1}`} className="w-full h-full object-cover" />
           </button>
         ))}
       </div>
@@ -72,10 +66,9 @@ export default function S08_Gallery() {
         >
           <img
             src={images[selected]}
-            alt=""
+            alt={`갤러리 ${selected + 1}`}
             className="max-w-full max-h-full object-contain"
           />
-          {/* 이전 버튼 */}
           {selected > 0 && (
             <button
               onClick={e => { e.stopPropagation(); prev() }}
@@ -85,7 +78,6 @@ export default function S08_Gallery() {
               ‹
             </button>
           )}
-          {/* 다음 버튼 */}
           {selected < images.length - 1 && (
             <button
               onClick={e => { e.stopPropagation(); next() }}
@@ -95,7 +87,6 @@ export default function S08_Gallery() {
               ›
             </button>
           )}
-          {/* 닫기 버튼 */}
           <button
             onClick={() => setSelected(null)}
             className="absolute top-4 right-4 text-white text-xl bg-black/40 rounded-full w-8 h-8 flex items-center justify-center"
@@ -103,7 +94,6 @@ export default function S08_Gallery() {
           >
             ✕
           </button>
-          {/* 인덱스 표시 */}
           <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-xs opacity-60">
             {selected + 1} / {images.length}
           </p>

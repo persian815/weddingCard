@@ -34,6 +34,7 @@ const TABS = [
   { id: 'etc', label: '기타' },
   { id: 'guestbook', label: '방명록' },
   { id: 'guestsnap', label: '게스트스냅' },
+  { id: 'attendance', label: '참석 현황' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -48,6 +49,17 @@ interface GuestbookEntry {
 
 interface SnapFile {
   name: string
+  created_at: string
+}
+
+interface AttendanceEntry {
+  id: string
+  name: string
+  side: string
+  attending: string
+  meal: string
+  companion: string | null
+  message: string | null
   created_at: string
 }
 
@@ -66,6 +78,8 @@ export default function AdminPage() {
   const [gbLoading, setGbLoading] = useState(false)
   const [snapFiles, setSnapFiles] = useState<SnapFile[]>([])
   const [snapLoading, setSnapLoading] = useState(false)
+  const [attendanceEntries, setAttendanceEntries] = useState<AttendanceEntry[]>([])
+  const [attendanceLoading, setAttendanceLoading] = useState(false)
 
   const coverFileRef = useRef<HTMLInputElement>(null)
   const galleryFileRef = useRef<HTMLInputElement>(null)
@@ -83,6 +97,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (authed && activeTab === 'guestbook') loadGuestbook()
     if (authed && activeTab === 'guestsnap') loadSnapFiles()
+    if (authed && activeTab === 'attendance') loadAttendance()
   }, [activeTab, authed])
 
   const showToast = (msg: string, ok: boolean) => {
@@ -157,6 +172,22 @@ export default function AdminPage() {
       }
     } catch {
       showToast('네트워크 오류', false)
+    }
+  }
+
+  const loadAttendance = async () => {
+    const pw = sessionStorage.getItem('admin-pw') ?? ''
+    setAttendanceLoading(true)
+    try {
+      const res = await fetch('/api/attendance', {
+        headers: { 'x-admin-password': pw },
+      })
+      const data = await res.json()
+      setAttendanceEntries(data.entries ?? [])
+    } catch {
+      showToast('참석 현황 불러오기 실패', false)
+    } finally {
+      setAttendanceLoading(false)
     }
   }
 
@@ -949,6 +980,80 @@ export default function AdminPage() {
           )}
         </div>
       )
+
+      // ── 참석 현황 ────────────────────────────────────────────
+      case 'attendance': return (() => {
+        const total = attendanceEntries.length
+        const attending = attendanceEntries.filter(e => e.attending === '참석').length
+        const notAttending = attendanceEntries.filter(e => e.attending === '불참석').length
+        const groomSide = attendanceEntries.filter(e => e.side === '신랑').length
+        const brideSide = attendanceEntries.filter(e => e.side === '신부').length
+
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-neutral-500">총 {total}건</p>
+              <button
+                onClick={loadAttendance}
+                disabled={attendanceLoading}
+                className="text-xs text-[var(--gold)] border border-[var(--gold)] px-3 py-1 disabled:opacity-50"
+              >
+                {attendanceLoading ? '불러오는 중...' : '새로고침'}
+              </button>
+            </div>
+
+            {total > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: '참석', value: attending, color: 'text-green-600' },
+                  { label: '불참석', value: notAttending, color: 'text-red-400' },
+                  { label: '신랑측', value: groomSide, color: 'text-blue-500' },
+                  { label: '신부측', value: brideSide, color: 'text-pink-400' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="border border-neutral-100 rounded-sm p-3 text-center bg-neutral-50">
+                    <p className="text-[10px] text-neutral-400">{label}</p>
+                    <p className={`text-xl font-medium ${color}`}>{value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {attendanceLoading ? (
+              <div className="flex items-center justify-center h-40 text-xs text-neutral-400">불러오는 중...</div>
+            ) : attendanceEntries.length === 0 ? (
+              <div className="flex items-center justify-center h-40 text-xs text-neutral-400">참석 응답이 없습니다</div>
+            ) : (
+              <div className="space-y-2">
+                {attendanceEntries.map(entry => (
+                  <div key={entry.id} className="border border-neutral-100 rounded-sm p-3 bg-neutral-50 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium">{entry.name}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${entry.side === '신랑' ? 'bg-blue-50 text-blue-500' : 'bg-pink-50 text-pink-400'}`}>
+                          {entry.side}측
+                        </span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${entry.attending === '참석' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-400'}`}>
+                          {entry.attending}
+                        </span>
+                        <span className="text-[10px] text-neutral-400">식사 {entry.meal}</span>
+                      </div>
+                      <span className="text-[10px] text-neutral-400 shrink-0">
+                        {new Date(entry.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    {entry.companion && (
+                      <p className="text-[10px] text-neutral-500">동행: {entry.companion}</p>
+                    )}
+                    {entry.message && (
+                      <p className="text-[10px] text-neutral-500 italic">"{entry.message}"</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()
 
       // ── 방명록 ───────────────────────────────────────────────
       case 'guestbook': return (

@@ -40,7 +40,8 @@ function CalendarGrid({ year, month, highlightDay }: { year: number; month: numb
 export default function S05_Ceremony() {
   const d = new Date(WEDDING_DATE)
   const { venue, ceremonyImage } = useWeddingConfig()
-  const dateLabel = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 토요일`
+  const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()]
+  const dateLabel = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${dayOfWeek}요일`
   return (
     <section className="py-16 px-8 text-center space-y-6">
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase">ceremony</p>
