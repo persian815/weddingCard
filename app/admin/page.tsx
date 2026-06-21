@@ -33,6 +33,7 @@ const TABS = [
   { id: 'info', label: '안내·계좌' },
   { id: 'etc', label: '기타' },
   { id: 'guestbook', label: '방명록' },
+  { id: 'guestsnap', label: '게스트스냅' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -43,6 +44,11 @@ interface GuestbookEntry {
   message: string
   created_at: string
   password?: string | null
+}
+
+interface SnapFile {
+  name: string
+  created_at: string
 }
 
 export default function AdminPage() {
@@ -58,6 +64,8 @@ export default function AdminPage() {
   const [showPreview, setShowPreview] = useState(false)
   const [guestbookEntries, setGuestbookEntries] = useState<GuestbookEntry[]>([])
   const [gbLoading, setGbLoading] = useState(false)
+  const [snapFiles, setSnapFiles] = useState<SnapFile[]>([])
+  const [snapLoading, setSnapLoading] = useState(false)
 
   const coverFileRef = useRef<HTMLInputElement>(null)
   const galleryFileRef = useRef<HTMLInputElement>(null)
@@ -73,9 +81,8 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    if (authed && activeTab === 'guestbook') {
-      loadGuestbook()
-    }
+    if (authed && activeTab === 'guestbook') loadGuestbook()
+    if (authed && activeTab === 'guestsnap') loadSnapFiles()
   }, [activeTab, authed])
 
   const showToast = (msg: string, ok: boolean) => {
@@ -96,6 +103,60 @@ export default function AdminPage() {
       showToast('방명록 불러오기 실패', false)
     } finally {
       setGbLoading(false)
+    }
+  }
+
+  const loadSnapFiles = async () => {
+    setSnapLoading(true)
+    try {
+      const res = await fetch('/api/guest-snap')
+      const data = await res.json()
+      setSnapFiles(data.files ?? [])
+    } catch {
+      showToast('게스트스냅 불러오기 실패', false)
+    } finally {
+      setSnapLoading(false)
+    }
+  }
+
+  const deleteSnapFile = async (fileName: string) => {
+    const pw = sessionStorage.getItem('admin-pw') ?? ''
+    try {
+      const res = await fetch('/api/guest-snap', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': pw },
+        body: JSON.stringify({ fileName }),
+      })
+      if (res.ok) {
+        setSnapFiles(prev => prev.filter(f => f.name !== fileName))
+        showToast('삭제되었습니다', true)
+      } else {
+        const data = await res.json()
+        showToast(data.error ?? '삭제 실패', false)
+      }
+    } catch {
+      showToast('네트워크 오류', false)
+    }
+  }
+
+  const clearAllSnapFiles = async () => {
+    if (!confirm('게스트스냅 사진을 모두 삭제하시겠습니까?')) return
+    const pw = sessionStorage.getItem('admin-pw') ?? ''
+    try {
+      const res = await fetch('/api/guest-snap', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': pw },
+        body: JSON.stringify({ all: true }),
+      })
+      if (res.ok) {
+        setSnapFiles([])
+        showToast('전체 삭제되었습니다', true)
+      } else {
+        const data = await res.json()
+        showToast(data.error ?? '삭제 실패', false)
+      }
+    } catch {
+      showToast('네트워크 오류', false)
     }
   }
 
@@ -836,6 +897,56 @@ export default function AdminPage() {
               />
             </Field>
           </Section>
+        </div>
+      )
+
+      // ── 게스트스냅 ──────────────────────────────────────────
+      case 'guestsnap': return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-neutral-500">총 {snapFiles.length}개</p>
+            <div className="flex gap-2">
+              <button
+                onClick={loadSnapFiles}
+                disabled={snapLoading}
+                className="text-xs text-[var(--gold)] border border-[var(--gold)] px-3 py-1 disabled:opacity-50"
+              >
+                {snapLoading ? '불러오는 중...' : '새로고침'}
+              </button>
+              {snapFiles.length > 0 && (
+                <button
+                  onClick={clearAllSnapFiles}
+                  className="text-xs text-red-400 border border-red-200 px-3 py-1"
+                >
+                  전체 삭제
+                </button>
+              )}
+            </div>
+          </div>
+          {snapLoading ? (
+            <div className="flex items-center justify-center h-40 text-xs text-neutral-400">불러오는 중...</div>
+          ) : snapFiles.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-xs text-neutral-400">업로드된 사진이 없습니다</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {snapFiles.map(f => {
+                const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/guest-snap/${f.name}`
+                return (
+                  <div key={f.name} className="relative aspect-square group">
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => {
+                        if (confirm('이 사진을 삭제하시겠습니까?')) deleteSnapFile(f.name)
+                      }}
+                      className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )
 
