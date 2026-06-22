@@ -26,6 +26,13 @@ export default function FloatingActions() {
         </div>
       )}
       <div className="fixed bottom-6 right-4 z-40 flex flex-col gap-2">
+        <a
+          href="/admin"
+          className="w-9 h-9 rounded-full bg-white/80 shadow flex items-center justify-center text-sm text-neutral-500"
+          aria-label="설정"
+        >
+          ⚙
+        </a>
         <button
           onClick={share}
           className="w-9 h-9 rounded-full bg-white/80 shadow flex items-center justify-center text-sm"
