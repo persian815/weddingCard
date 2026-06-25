@@ -1,17 +1,25 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useWeddingConfig } from '@/components/WeddingConfigContext'
+import { useScrollVisible } from '@/hooks/useScrollVisible'
 
 export default function S08_Gallery() {
   const { gallery: images } = useWeddingConfig()
   const [selected, setSelected] = useState<number | null>(null)
+  const [slideDir, setSlideDir] = useState<'next' | 'prev'>('next')
+  const [imgKey, setImgKey] = useState(0)
   const touchStartX = useRef<number | null>(null)
+  const { ref } = useScrollVisible<HTMLElement>()
 
   const prev = useCallback(() => {
+    setSlideDir('prev')
+    setImgKey(k => k + 1)
     setSelected(s => (s !== null && s > 0 ? s - 1 : s))
   }, [])
 
   const next = useCallback(() => {
+    setSlideDir('next')
+    setImgKey(k => k + 1)
     setSelected(s => (s !== null && s < images.length - 1 ? s + 1 : s))
   }, [images.length])
 
@@ -40,7 +48,7 @@ export default function S08_Gallery() {
 
   if (images.length === 0) {
     return (
-      <section className="py-16 px-8 text-center">
+      <section ref={ref} className="py-16 px-8 text-center scroll-fade">
         <p className="text-sm tracking-widest text-[var(--gold)] uppercase mb-6">gallery</p>
         <p className="text-xs text-neutral-400">관리자 설정에서 갤러리 이미지를 등록하세요</p>
       </section>
@@ -48,11 +56,11 @@ export default function S08_Gallery() {
   }
 
   return (
-    <section className="py-16 px-8">
+    <section ref={ref} className="py-16 px-8 scroll-fade">
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase text-center mb-6">gallery</p>
       <div className="grid grid-cols-3 gap-1">
         {images.map((src, i) => (
-          <button key={src} onClick={() => setSelected(i)} className="aspect-square overflow-hidden">
+          <button key={src} onClick={() => { setSelected(i); setImgKey(0) }} className="aspect-square overflow-hidden">
             <img src={src} alt={`갤러리 ${i + 1}`} className="w-full h-full object-cover" />
           </button>
         ))}
@@ -65,9 +73,10 @@ export default function S08_Gallery() {
           onTouchEnd={handleTouchEnd}
         >
           <img
+            key={imgKey}
             src={images[selected]}
             alt={`갤러리 ${selected + 1}`}
-            className="max-w-full max-h-full object-contain"
+            className={`max-w-full max-h-full object-contain ${slideDir === 'next' ? 'gallery-next' : 'gallery-prev'}`}
           />
           {selected > 0 && (
             <button

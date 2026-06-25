@@ -1,6 +1,7 @@
 'use client'
 import { useWeddingConfig } from '@/components/WeddingConfigContext'
 import { WEDDING_DATE } from '@/lib/constants'
+import { useScrollVisible } from '@/hooks/useScrollVisible'
 
 function CalendarGrid({ year, month, highlightDay }: { year: number; month: number; highlightDay: number }) {
   const firstDay = new Date(year, month, 1).getDay()
@@ -25,7 +26,7 @@ function CalendarGrid({ year, month, highlightDay }: { year: number; month: numb
             <span
               key={di}
               className={day === highlightDay
-                ? 'w-7 h-7 mx-auto flex items-center justify-center rounded-full bg-[var(--gold)] text-white'
+                ? 'w-7 h-7 mx-auto flex items-center justify-center rounded-full bg-[var(--gold)] text-white gold-pulse-ring'
                 : 'py-1 text-neutral-700'}
             >
               {day ?? ''}
@@ -42,8 +43,10 @@ export default function S05_Ceremony() {
   const { venue, ceremonyImage } = useWeddingConfig()
   const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()]
   const dateLabel = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${dayOfWeek}요일`
+  const { ref } = useScrollVisible<HTMLElement>()
+
   return (
-    <section className="py-16 px-8 text-center space-y-6">
+    <section ref={ref} className="py-16 px-8 text-center space-y-6 scroll-fade">
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase">ceremony</p>
       {ceremonyImage && (
         <div className="w-full aspect-[4/3] overflow-hidden rounded-sm mb-6">

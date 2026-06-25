@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useWeddingConfig } from '@/components/WeddingConfigContext'
+import { useScrollVisible } from '@/hooks/useScrollVisible'
 
 type Side = '신랑' | '신부'
 type Attending = '참석' | '불참석'
@@ -8,6 +9,7 @@ type Meal = '○' | '×' | '미정'
 
 export default function S12_Attendance() {
   const { attendanceFormUrl } = useWeddingConfig()
+  const { ref } = useScrollVisible<HTMLElement>()
 
   const [open, setOpen] = useState(false)
   const [side, setSide] = useState<Side>('신랑')
@@ -27,7 +29,6 @@ export default function S12_Attendance() {
 
   const handleClose = () => {
     setOpen(false)
-    // 폼 초기화
     setSide('신랑')
     setAttending('참석')
     setMeal('○')
@@ -77,7 +78,7 @@ export default function S12_Attendance() {
     }`
 
   return (
-    <section className="py-16 px-8 text-center space-y-4 bg-neutral-50">
+    <section ref={ref} className="py-16 px-8 text-center space-y-4 bg-neutral-50 scroll-fade">
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase">attendance</p>
       <p className="text-xs text-neutral-500">참석 여부를 알려주시면 감사하겠습니다</p>
 
@@ -102,15 +103,13 @@ export default function S12_Attendance() {
         </p>
       )}
 
-      {/* 배경 오버레이 */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/40"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
           onClick={handleClose}
         />
       )}
 
-      {/* 바텀시트 */}
       <div
         className={`fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-2xl transition-transform duration-300 ${
           open ? 'translate-y-0' : 'translate-y-full'
@@ -129,14 +128,7 @@ export default function S12_Attendance() {
                 <p className="text-xs text-neutral-500">어느 측 하객이신가요?</p>
                 <div className="flex gap-2">
                   {(['신랑', '신부'] as Side[]).map(v => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setSide(v)}
-                      className={toggleBtnClass(side === v)}
-                    >
-                      {v}
-                    </button>
+                    <button key={v} type="button" onClick={() => setSide(v)} className={toggleBtnClass(side === v)}>{v}</button>
                   ))}
                 </div>
               </div>
@@ -145,14 +137,7 @@ export default function S12_Attendance() {
                 <p className="text-xs text-neutral-500">참석 여부</p>
                 <div className="flex gap-2">
                   {(['참석', '불참석'] as Attending[]).map(v => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setAttending(v)}
-                      className={toggleBtnClass(attending === v)}
-                    >
-                      {v}
-                    </button>
+                    <button key={v} type="button" onClick={() => setAttending(v)} className={toggleBtnClass(attending === v)}>{v}</button>
                   ))}
                 </div>
               </div>
@@ -161,14 +146,7 @@ export default function S12_Attendance() {
                 <p className="text-xs text-neutral-500">식사 여부</p>
                 <div className="flex gap-2">
                   {(['○', '×', '미정'] as Meal[]).map(v => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setMeal(v)}
-                      className={toggleBtnClass(meal === v)}
-                    >
-                      {v}
-                    </button>
+                    <button key={v} type="button" onClick={() => setMeal(v)} className={toggleBtnClass(meal === v)}>{v}</button>
                   ))}
                 </div>
               </div>
@@ -208,9 +186,7 @@ export default function S12_Attendance() {
                 />
               </div>
 
-              {submitError && (
-                <p className="text-xs text-red-500 text-center">{submitError}</p>
-              )}
+              {submitError && <p className="text-xs text-red-500 text-center">{submitError}</p>}
               <button
                 type="submit"
                 disabled={submitting || !name.trim()}

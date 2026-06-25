@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useWeddingConfig } from '@/components/WeddingConfigContext'
+import { useScrollVisible } from '@/hooks/useScrollVisible'
 
 const TABS = [
   { key: 'photobooth', label: '포토부스' },
@@ -17,11 +18,12 @@ const IMAGE_KEY = {
 export default function S10_InfoTabs() {
   const [active, setActive] = useState<typeof TABS[number]['key']>('photobooth')
   const { infoTabs } = useWeddingConfig()
+  const { ref } = useScrollVisible<HTMLElement>()
 
   const imageUrl = infoTabs[IMAGE_KEY[active]]
 
   return (
-    <section className="py-16 px-8">
+    <section ref={ref} className="py-16 px-8 scroll-fade">
       <div className="flex border-b mb-4">
         {TABS.map(({ key, label }) => (
           <button

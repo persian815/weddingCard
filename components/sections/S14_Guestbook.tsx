@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useScrollVisible } from '@/hooks/useScrollVisible'
 
-type Entry = { id: string; name: string; message: string; created_at: string }
+type Entry = { id: string; name: string; message: string; created_at: string; isNew?: boolean }
 
 function EntryItem({ entry, onDeleted }: { entry: Entry; onDeleted: (id: string) => void }) {
   const [deleting, setDeleting] = useState(false)
@@ -33,7 +34,7 @@ function EntryItem({ entry, onDeleted }: { entry: Entry; onDeleted: (id: string)
   }
 
   return (
-    <div className="space-y-1 pb-4 border-b border-neutral-100 last:border-0">
+    <div className={`space-y-1 pb-4 border-b border-neutral-100 last:border-0 ${entry.isNew ? 'entry-new' : ''}`}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium">{entry.name}</p>
         {!showInput && (
@@ -79,6 +80,14 @@ function EntryItem({ entry, onDeleted }: { entry: Entry; onDeleted: (id: string)
   )
 }
 
+function Toast({ msg, ok }: { msg: string; ok: boolean }) {
+  return (
+    <div className={`fixed top-4 left-1/2 z-50 text-white text-xs px-4 py-2 rounded toast-enter ${ok ? 'bg-neutral-800' : 'bg-red-500'}`}>
+      {msg}
+    </div>
+  )
+}
+
 export default function S14_Guestbook() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [name, setName] = useState('')
@@ -86,6 +95,7 @@ export default function S14_Guestbook() {
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
+  const { ref } = useScrollVisible<HTMLElement>()
 
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok })
@@ -116,7 +126,12 @@ export default function S14_Guestbook() {
         return
       }
       const data = await fetch('/api/guestbook').then(r => r.json())
-      setEntries(data.entries ?? [])
+      const newEntries: Entry[] = data.entries ?? []
+      // 첫 번째(최신) 항목에 isNew 플래그 부여
+      if (newEntries.length > 0) {
+        newEntries[0] = { ...newEntries[0], isNew: true }
+      }
+      setEntries(newEntries)
       setName('')
       setMessage('')
       setPassword('')
@@ -129,12 +144,8 @@ export default function S14_Guestbook() {
   }
 
   return (
-    <section className="py-16 px-8 bg-neutral-50">
-      {toast && (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 text-white text-xs px-4 py-2 rounded ${toast.ok ? 'bg-neutral-800' : 'bg-red-500'}`}>
-          {toast.msg}
-        </div>
-      )}
+    <section ref={ref} className="py-16 px-8 bg-neutral-50 scroll-fade">
+      {toast && <Toast msg={toast.msg} ok={toast.ok} />}
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase text-center mb-6">guestbook</p>
       <form onSubmit={submit} className="max-w-sm mx-auto space-y-2 mb-8">
         <input

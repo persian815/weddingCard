@@ -1,14 +1,15 @@
 'use client'
 import { useWeddingConfig } from '@/components/WeddingConfigContext'
+import { useScrollVisible } from '@/hooks/useScrollVisible'
 
 export default function S11_Location() {
   const { venue } = useWeddingConfig()
   const encodedAddress = encodeURIComponent(venue.address || venue.name || '')
+  const { ref } = useScrollVisible<HTMLElement>()
 
   const handleTmap = () => {
     const deeplink = `tmap://search?searchKeyword=${encodedAddress}`
     const fallback = `https://tmap.life/search?q=${encodedAddress}`
-    // 딥링크 시도 후 일정 시간 내 앱 전환 안 되면 fallback
     window.location.href = deeplink
     setTimeout(() => {
       window.open(fallback, '_blank')
@@ -16,7 +17,7 @@ export default function S11_Location() {
   }
 
   return (
-    <section className="py-16 px-8 space-y-4">
+    <section ref={ref} className="py-16 px-8 space-y-4 scroll-fade">
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase text-center">location</p>
 
       {encodedAddress ? (

@@ -34,3 +34,100 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ── 스크롤 페이드인 (전 섹션 공통) ── */
+.scroll-fade {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.75s ease, transform 0.75s ease;
+}
+.scroll-fade.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.scroll-fade.delay-1 { transition-delay: 120ms; }
+.scroll-fade.delay-2 { transition-delay: 240ms; }
+.scroll-fade.delay-3 { transition-delay: 360ms; }
+.scroll-fade.delay-4 { transition-delay: 480ms; }
+.scroll-fade.delay-5 { transition-delay: 600ms; }
+
+/* ── 히어로 커버 입장 ── */
+@keyframes hero-fade-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-enter {
+  opacity: 0;
+  animation: hero-fade-up 0.9s ease forwards;
+}
+
+/* ── 진입 팝업 ── */
+@keyframes popup-in {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes popup-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.88); }
+}
+.popup-enter { animation: popup-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.popup-exit  { animation: popup-out 0.2s ease forwards; }
+
+/* ── 토스트 ── */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(-50%) translateY(0); }
+  to   { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+}
+.toast-enter { animation: toast-in 0.3s ease forwards; }
+.toast-exit  { animation: toast-out 0.3s ease forwards; }
+
+/* ── 갤러리 슬라이드 전환 ── */
+@keyframes slide-from-right {
+  from { opacity: 0; transform: translateX(48px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-from-left {
+  from { opacity: 0; transform: translateX(-48px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.gallery-next { animation: slide-from-right 0.28s ease forwards; }
+.gallery-prev { animation: slide-from-left 0.28s ease forwards; }
+
+/* ── 방명록 새 글 슬라이드다운 ── */
+@keyframes entry-slide-down {
+  from { opacity: 0; transform: translateY(-14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.entry-new { animation: entry-slide-down 0.4s ease forwards; }
+
+/* ── Together 초 플립 ── */
+@keyframes flip-up {
+  0%  { transform: translateY(0);     opacity: 1; }
+  45% { transform: translateY(-110%); opacity: 0; }
+  55% { transform: translateY(110%);  opacity: 0; }
+  100%{ transform: translateY(0);     opacity: 1; }
+}
+.flip-digit { display: inline-block; animation: flip-up 0.38s ease; }
+
+/* ── 달력 골드 펄스 ── */
+@keyframes gold-ring {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(196,168,130,0.55); }
+  50%       { box-shadow: 0 0 0 6px rgba(196,168,130,0);    }
+}
+.gold-pulse-ring { animation: gold-ring 2s ease-in-out infinite; }
+
+/* ── 웨딩 인터뷰 바텀시트 ── */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes sheet-down {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+.sheet-enter { animation: sheet-up 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+.sheet-exit  { animation: sheet-down 0.28s ease forwards; }

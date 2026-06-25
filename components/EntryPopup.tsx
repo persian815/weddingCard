@@ -5,6 +5,7 @@ import { useBgm } from '@/components/BgmContext'
 
 export default function EntryPopup() {
   const [visible, setVisible] = useState(false)
+  const [closing, setClosing] = useState(false)
   const { play, hasMusic } = useBgm()
 
   useEffect(() => {
@@ -17,8 +18,12 @@ export default function EntryPopup() {
       const today = new Date().toISOString().slice(0, 10)
       localStorage.setItem('popup-hidden-date', today)
     }
-    setVisible(false)
-    if (hasMusic) play()
+    setClosing(true)
+    setTimeout(() => {
+      setVisible(false)
+      setClosing(false)
+      if (hasMusic) play()
+    }, 200)
   }
 
   const d = new Date(WEDDING_DATE)
@@ -27,8 +32,8 @@ export default function EntryPopup() {
   if (!visible) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-      <div className="bg-white w-72 p-8 text-center space-y-6">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+      <div className={`bg-white w-72 p-8 text-center space-y-6 ${closing ? 'popup-exit' : 'popup-enter'}`}>
         <p className="text-xs text-[var(--gold)] tracking-widest uppercase">wedding invitation</p>
         <div className="space-y-1">
           <p className="font-serif text-xl">{GROOM} & {BRIDE}</p>

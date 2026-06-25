@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useWeddingConfig } from '@/components/WeddingConfigContext'
+import { useScrollVisible } from '@/hooks/useScrollVisible'
 import type { WeddingConfig } from '@/lib/wedding-config'
 
 function AccountItem({ name, bank, number, kakaoPayUrl }: WeddingConfig['accounts'][0]) {
@@ -57,8 +58,10 @@ function AccountItem({ name, bank, number, kakaoPayUrl }: WeddingConfig['account
 
 export default function S13_Gift() {
   const { accounts } = useWeddingConfig()
+  const { ref } = useScrollVisible<HTMLElement>()
+
   return (
-    <section className="py-16 px-8">
+    <section ref={ref} className="py-16 px-8 scroll-fade">
       <p className="text-sm tracking-widest text-[var(--gold)] uppercase text-center mb-6">gift</p>
       <div className="max-w-sm mx-auto">
         {accounts.map((acc, i) => (
