@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 [참고 정보]
 ${context}`
 
-  const llmRes = await fetch(`${process.env.LITELLM_BASE_URL}/v1/chat/completions`, {
+  const llmRes = await fetch(`${process.env.LITELLM_BASE_URL?.trim()}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
