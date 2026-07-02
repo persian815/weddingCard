@@ -4,6 +4,7 @@ import { BgmProvider } from '@/components/BgmContext'
 import EntryPopup from '@/components/EntryPopup'
 import MusicButton from '@/components/MusicButton'
 import FloatingActions from '@/components/FloatingActions'
+import ChatBot from '@/components/ChatBot'
 import S01_HeroCover from '@/components/sections/S01_HeroCover'
 import S02_Invitation from '@/components/sections/S02_Invitation'
 import S03_People from '@/components/sections/S03_People'
@@ -30,6 +31,7 @@ export default async function Home() {
         <EntryPopup />
         <MusicButton />
         <FloatingActions />
+        <ChatBot />
         <S01_HeroCover />
         <S02_Invitation />
         <S03_People />
