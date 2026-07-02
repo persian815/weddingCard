@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 const FALLBACK = '죄송합니다, 해당 질문에 대한 정보가 없습니다. 신랑 또는 신부에게 직접 문의해 주세요.'
 
 export async function POST(req: Request) {
+  try {
   const { message, slug = 'weddingcard' } = await req.json()
   if (!message?.trim()) {
     return NextResponse.json({ error: 'message required' }, { status: 400 })
@@ -95,4 +96,9 @@ ${context}`
   }).then(() => {})
 
   return NextResponse.json({ answer })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[chat] unhandled error:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 }
