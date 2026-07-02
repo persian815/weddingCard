@@ -89,7 +89,8 @@ weddingCard/
         ├── 001_guestbook.sql
         ├── 002_config.sql
         ├── 003_attendance.sql
-        └── 004_guestbook_password.sql
+        ├── 004_guestbook_password.sql
+        └── 005_chatbot.sql             ← invitations, documents, embeddings, chat_logs, match_documents RPC
 ```
 
 ---
