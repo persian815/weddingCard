@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   const { data: docs, error: docErr } = await supabase.rpc('match_documents', {
     query_embedding: vector,
     invitation_slug: slug,
-    match_threshold: 0.5,
+    match_threshold: 0.3,
     match_count: 5,
   })
   if (docErr || !docs?.length) {
